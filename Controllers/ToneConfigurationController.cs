@@ -7,7 +7,7 @@ using BookDataApi.Dtos;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/tones")]
     public class ToneConfigurationController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -25,7 +25,7 @@ namespace book_data_api.Controllers
         /// Loads parent tones with their subtones and maps them to DTOs for the configuration API.
         /// </summary>
         /// <returns>List of ToneItemDto objects representing the tone hierarchy</returns>
-        [HttpGet]
+        [HttpGet("configuration")]
         public async Task<ActionResult<List<ToneItemDto>>> GetToneConfiguration()
         {
             List<Tone> tones = await _context.Tones
@@ -56,7 +56,7 @@ namespace book_data_api.Controllers
         /// </summary>
         /// <param name="tones">The list of ToneItemDto objects containing tone configuration data</param>
         /// <returns>Boolean indicating success or failure of the operation</returns>
-        [HttpPost]
+        [HttpPost("configuration")]
         public async Task<ActionResult<bool>> UpdateToneConfiguration([FromBody] List<ToneItemDto> tones)
         {
             try
