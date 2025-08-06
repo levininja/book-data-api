@@ -7,7 +7,7 @@ using BookDataApi.Dtos;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookshelfgroupings")]
     public class BookshelfGroupingsController : ControllerBase
     {
         private readonly ILogger<BookshelfGroupingsController> _logger;
@@ -24,7 +24,7 @@ namespace book_data_api.Controllers
         /// Retrieves the bookshelf configuration data from the database and returns it as a BookshelfConfigurationDto object.
         /// </summary>
         /// <returns>BookshelfConfigurationDto object containing bookshelves and groupings configuration</returns>
-        [HttpGet]
+        [HttpGet("configuration")]
         public async Task<ActionResult<BookshelfConfigurationDto>> GetBookshelfConfiguration()
         {
             List<Bookshelf> bookshelves = await _context.Bookshelves
@@ -65,7 +65,7 @@ namespace book_data_api.Controllers
         /// </summary>
         /// <param name="model">The BookshelfConfigurationDto containing updated bookshelf configuration data.</param>
         /// <returns>Boolean indicating success or failure of the operation</returns>
-        [HttpPost]
+        [HttpPost("configuration")]
         public async Task<ActionResult<bool>> UpdateBookshelfConfiguration([FromBody] BookshelfConfigurationDto model)
         {
             try

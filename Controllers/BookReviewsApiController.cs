@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookreviews")]
     public class BookReviewsApiController : ControllerBase
     {
         private readonly ILogger<BookReviewsApiController> _logger;

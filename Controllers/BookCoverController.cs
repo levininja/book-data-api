@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookcovers")]
     public class BookCoverController : ControllerBase
     {
         private readonly ILogger<BookCoverController> _logger;

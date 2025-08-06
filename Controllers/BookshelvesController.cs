@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookshelves")]
     public class BookshelvesController : ControllerBase
     {
         private readonly ILogger<BookshelvesController> _logger;

@@ -13,7 +13,7 @@ using CsvHelper.Configuration;
 namespace book_data_api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookreviews")]
     public class BookReviewsController : ControllerBase
     {
         private readonly ILogger<BookReviewsController> _logger;
