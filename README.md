@@ -16,7 +16,6 @@ A standalone ASP.NET Core Web API for serving book data and related information.
 
 - .NET 8.0 SDK
 - PostgreSQL database
-- Node.js (for SCSS compilation if needed)
 
 ## Setup Instructions
 
@@ -130,15 +129,6 @@ book-data-api/
 4. Apply the migration: `dotnet ef database update`
 5. Create controller in `Controllers/` directory
 6. Add any necessary services in `Services/` directory
-
-### SCSS Compilation
-
-If you need to modify CSS, use SCSS files and compile them:
-
-```bash
-# Watch for SCSS changes and compile to CSS
-npm run scss:watch
-```
 
 ## Configuration
 
