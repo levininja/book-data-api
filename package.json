@@ -1,0 +1,21 @@
+{
+  "name": "book-data-api",
+  "version": "1.0.0",
+  "description": "Book Data API - A standalone ASP.NET Core Web API for serving book data",
+  "scripts": {
+    "scss:watch": "sass --watch wwwroot/scss:wwwroot/css",
+    "scss:build": "sass wwwroot/scss:wwwroot/css",
+    "scss:build:compressed": "sass --style=compressed wwwroot/scss:wwwroot/css"
+  },
+  "devDependencies": {
+    "sass": "^1.69.0"
+  },
+  "keywords": [
+    "aspnet-core",
+    "api",
+    "books",
+    "postgresql"
+  ],
+  "author": "Levi Hobbs",
+  "license": "MIT"
+} 
