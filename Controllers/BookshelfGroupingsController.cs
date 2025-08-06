@@ -2,6 +2,7 @@ using book_data_api.Data;
 using book_data_api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BookDataApi.Dtos;
 
 namespace book_data_api.Controllers
 {
@@ -20,11 +21,11 @@ namespace book_data_api.Controllers
         
         
         /// <summary>
-        /// Displays the bookshelf configuration page with current bookshelves and groupings.
+        /// Retrieves the bookshelf configuration data from the database and returns it as a BookshelfConfigurationDto object.
         /// </summary>
-        /// <returns>The bookshelf configuration view with populated view model.</returns>
+        /// <returns>BookshelfConfigurationDto object containing bookshelves and groupings configuration</returns>
         [HttpGet]
-        public async Task<IActionResult> BookshelfConfiguration()
+        public async Task<ActionResult<BookshelfConfigurationDto>> GetBookshelfConfiguration()
         {
             List<Bookshelf> bookshelves = await _context.Bookshelves
                 .OrderBy(bs => bs.DisplayName ?? bs.Name)
@@ -35,10 +36,10 @@ namespace book_data_api.Controllers
                 .OrderBy(bg => bg.DisplayName ?? bg.Name)
                 .ToListAsync();
                 
-            BookshelfConfigurationViewModel viewModel = new BookshelfConfigurationViewModel
+            BookshelfConfigurationDto configurationDto = new BookshelfConfigurationDto
             {
                 EnableCustomMappings = bookshelves.Any(bs => bs.Display.HasValue),
-                Bookshelves = bookshelves.Select(bs => new BookshelfDisplayItem
+                Bookshelves = bookshelves.Select(bs => new BookshelfDisplayItemDto
                 {
                     Id = bs.Id,
                     Name = bs.Name,
@@ -46,7 +47,7 @@ namespace book_data_api.Controllers
                     Display = bs.Display ?? false,
                     IsGenreBased = bs.IsGenreBased
                 }).ToList(),
-                Groupings = groupings.Select(bg => new BookshelfGroupingItem
+                Groupings = groupings.Select(bg => new BookshelfGroupingItemDto
                 {
                     Id = bg.Id,
                     Name = bg.Name,
@@ -56,16 +57,16 @@ namespace book_data_api.Controllers
                 }).ToList()
             };
             
-            return View(viewModel);
+            return Ok(configurationDto);
         }
         
         /// <summary>
         /// Handles the POST request for updating bookshelf configurations, including display settings and groupings.
         /// </summary>
-        /// <param name="model">The view model containing updated bookshelf configuration data.</param>
-        /// <returns>Redirect to the bookshelf configuration page after saving.</returns>
+        /// <param name="model">The BookshelfConfigurationDto containing updated bookshelf configuration data.</param>
+        /// <returns>Boolean indicating success or failure of the operation</returns>
         [HttpPost]
-        public async Task<IActionResult> BookshelfConfiguration(BookshelfConfigurationViewModel model)
+        public async Task<ActionResult<bool>> UpdateBookshelfConfiguration([FromBody] BookshelfConfigurationDto model)
         {
             try
             {                
@@ -76,7 +77,7 @@ namespace book_data_api.Controllers
                 {
                     foreach (Bookshelf bookshelf in bookshelves)
                     {
-                        BookshelfDisplayItem? displayItem = model.Bookshelves.FirstOrDefault(b => b.Id == bookshelf.Id);
+                        BookshelfDisplayItemDto? displayItem = model.Bookshelves.FirstOrDefault(b => b.Id == bookshelf.Id);
                         bookshelf.Display = displayItem?.Display ?? false;
                         bookshelf.IsGenreBased = displayItem?.IsGenreBased ?? false;
                     }
@@ -101,7 +102,7 @@ namespace book_data_api.Controllers
                 HashSet<int> bookshelvesInGroupings = new HashSet<int>();
                 
                 // Update or create groupings
-                foreach (BookshelfGroupingItem groupingModel in model.Groupings)
+                foreach (BookshelfGroupingItemDto groupingModel in model.Groupings)
                 {                   
                     BookshelfGrouping grouping;
                     
@@ -156,15 +157,13 @@ namespace book_data_api.Controllers
                 }
                 
                 int saveResult = await _context.SaveChangesAsync();
-                ViewBag.SuccessMessage = "Bookshelf configuration saved successfully.";
+                return Ok(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving bookshelf configuration");
-                ModelState.AddModelError("", "An error occurred while saving the configuration.");
+                return BadRequest(false);
             }
-            
-            return await BookshelfConfiguration();
         }
 
     }

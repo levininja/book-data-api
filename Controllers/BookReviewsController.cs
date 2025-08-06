@@ -418,7 +418,7 @@ namespace book_data_api.Controllers
         /// <exception cref="Exception">Thrown if header is missing or required columns are absent.</exception>
         private void ValidateCsvHeader(CsvReader csv, string[] requiredColumns)
         {
-            string[] header = csv.HeaderRecord;
+            string[]? header = csv.HeaderRecord;
             if (header == null)
                 throw new Exception("CSV file is missing header row");
             

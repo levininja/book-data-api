@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using book_data_api.Data;
 using book_data_api.Models;
 using BookDataApi.Dtos;
-using BookDataApi.Dtos.ToneAssignmentDtos;
 
 namespace book_data_api.Controllers
 {
