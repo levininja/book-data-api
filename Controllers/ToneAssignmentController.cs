@@ -31,7 +31,7 @@ namespace book_data_api.Controllers
         public async Task<ActionResult<ToneAssignmentDto>> GetToneAssignment()
         {
             try
-            {
+            {                
                 // Get all book reviews that have review content, including their associated books
                 List<BookReview> allBookReviews = await _context.BookReviews
                     .Include(br => br.Book)
@@ -75,9 +75,19 @@ namespace book_data_api.Controllers
                         MyReview = br.Review,
                         AssignedToneIds = br.Book.Tones.Select(t => t.Id).ToList(),
                         //SuggestedToneIds = TODO
+                    }).ToList(),
+                    Tones = allTones.Select(t => new ToneItemDto
+                    {
+                        Id = t.Id,
+                        Name = t.Name,
+                        Subtones = t.Subtones.Select(st => new ToneItemDto
+                        {
+                            Id = st.Id,
+                            Name = st.Name
+                        }).ToList()
                     }).ToList()
                 };
-
+                
                 return Ok(toneAssignmentDto);
             }
             catch (Exception ex)
@@ -123,7 +133,9 @@ namespace book_data_api.Controllers
                         // Add new tone assignments
                         List<Tone> selectedTones = allTones.Where(t => bookReviewModel.AssignedToneIds.Contains(t.Id)).ToList();
                         foreach (Tone tone in selectedTones)
+                        {
                             bookReview.Book.Tones.Add(tone);
+                        }
                     }
                 }
 
@@ -140,11 +152,13 @@ namespace book_data_api.Controllers
                         // Add new tone assignments
                         List<Tone> selectedTones = allTones.Where(t => bookReviewModel.AssignedToneIds.Contains(t.Id)).ToList();
                         foreach (Tone tone in selectedTones)
+                        {
                             bookReview.Book.Tones.Add(tone);
+                        }
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                int saveResult = await _context.SaveChangesAsync();
                 
                 return Ok(true);
             }
