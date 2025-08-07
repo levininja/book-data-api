@@ -48,19 +48,19 @@ namespace book_data_api.Controllers
                         
                     allBookshelves = await _context.Bookshelves
                         .Where(bs => bs.Display == true && !bookshelvesInGroupings.Contains(bs.Id))
-                        .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                        .OrderBy(bs => bs.Name)
                         .ToListAsync();
                         
                     allBookshelfGroupings = await _context.BookshelfGroupings
                         .Include(bg => bg.Bookshelves)
-                        .OrderBy(bg => bg.DisplayName ?? bg.Name)
+                        .OrderBy(bg => bg.Name)
                         .ToListAsync();
                 }
                 else
                 {
                     // Show all bookshelves as before
                     allBookshelves = await _context.Bookshelves
-                        .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                        .OrderBy(bs => bs.Name)
                         .ToListAsync();
                 }
                 
@@ -107,7 +107,7 @@ namespace book_data_api.Controllers
                 {
                     bookReviewsQuery = bookReviewsQuery
                         .Where(br => br.Book.Bookshelves.Any(bs => 
-                            (bs.DisplayName ?? bs.Name).ToLower() == displayCategory.ToLower()));
+                            bs.Name.ToLower() == displayCategory.ToLower()));
                 }
                 
                 // Order by date read (most recent first)
@@ -315,9 +315,12 @@ namespace book_data_api.Controllers
                         row.Additional_Authors, row.Publisher, row.Bookshelves)
                 };
 
+                // Import any bookshelves, if they don't already exist
+                ProcessBookshelvesForImport(row.Bookshelves, book, existingBookshelves);
+                
                 // Import book
                 _context.Books.Add(book);
-                await _context.SaveChangesAsync(); // Save to get the book ID
+                await _context.SaveChangesAsync(); // Save to get the book ID and save bookshelves
                 
                 // Create BookReview object
                 BookReview bookReview = new BookReview
@@ -332,9 +335,6 @@ namespace book_data_api.Controllers
                 // Import book review
                 _context.BookReviews.Add(bookReview);
                 importedCount++;
-                
-                // Import any bookshelves, if they don't already exist
-                ProcessBookshelvesForImport(row.Bookshelves, book, existingBookshelves);
             }
             
             // After processing all records, delete bookshelves that exist in the database but don't exist in the import
@@ -446,19 +446,19 @@ namespace book_data_api.Controllers
                 .Where(s => !string.IsNullOrEmpty(s))
                 .ToList();
             
-            foreach (string shelfName in shelfNames)
+            foreach (string goodreadsShelfName in shelfNames)
             {
-                string normalizedName = shelfName.ToLower();
+                string displayShelfName = ConvertGoodreadsShelfToDisplayFormat(goodreadsShelfName);
+                string normalizedDisplayName = displayShelfName.ToLower();
 
                 // See if this bookshelf already exists in the database
-                Bookshelf? bookshelf = existingBookshelves.FirstOrDefault(b => b.Name.ToLower() == normalizedName);
+                Bookshelf? bookshelf = existingBookshelves.FirstOrDefault(b => b.Name.ToLower() == normalizedDisplayName);
 
                 // If the bookshelf doesn't exist, create a new one
                 if(bookshelf == null){
                     bookshelf = new Bookshelf
                     {
-                        Name = shelfName,
-                        DisplayName = shelfName
+                        Name = displayShelfName
                     };
                     _context.Bookshelves.Add(bookshelf);
                     existingBookshelves.Add(bookshelf);
@@ -468,6 +468,25 @@ namespace book_data_api.Controllers
                 // to track that it has this bookshelf (this populates a crossreference table in the db).
                 book.Bookshelves.Add(bookshelf);
             }
+        }
+
+        /// <summary>
+        /// Converts Goodreads shelf names from their kebab-case format to a space-separated display format.
+        /// Goodreads uses formats like "modern-classics" and "sf" which we convert to "Modern Classics" and "Science Fiction".
+        /// </summary>
+        /// <param name="goodreadsShelfName">The raw bookshelf name from Goodreads CSV export (e.g., "modern-classics", "sf")</param>
+        /// <returns>The display-formatted bookshelf name (e.g., "Modern Classics", "Science Fiction")</returns>
+        private string ConvertGoodreadsShelfToDisplayFormat(string goodreadsShelfName)
+        {
+            // Apply specific replacements first (e.g., "sf" -> "Science Fiction")
+            string displayName = goodreadsShelfName.Replace("sf", "Science Fiction");
+            
+            // Convert kebab-case to Title Case (e.g., "modern-classics" -> "Modern Classics")
+            displayName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                displayName.Replace('-', ' ').ToLower()
+            );
+            
+            return displayName;
         }
 
         /// <summary>
@@ -487,14 +506,18 @@ namespace book_data_api.Controllers
                         .Where(s => !string.IsNullOrEmpty(s))
                         .ToList();
                     
-                    foreach (string shelfName in shelfNames)
-                        importedBookshelfNames.Add(shelfName);
+                    foreach (string goodreadsShelfName in shelfNames)
+                    {
+                        string displayShelfName = ConvertGoodreadsShelfToDisplayFormat(goodreadsShelfName);
+                        importedBookshelfNames.Add(displayShelfName);
+                    }
                 }
             }
             
-            // Find bookshelves that exist in the database but not in the import
+            // Only remove bookshelves that existed in the database before the import started
+            // (i.e., those that were loaded from the database, not created during import)
             List<Bookshelf> bookshelvesToDelete = existingBookshelves
-                .Where(bs => !importedBookshelfNames.Contains(bs.Name))
+                .Where(bs => bs.Id != 0 && !importedBookshelfNames.Contains(bs.Name)) // Only consider bookshelves with existing IDs
                 .ToList();
             
             if (bookshelvesToDelete.Any())

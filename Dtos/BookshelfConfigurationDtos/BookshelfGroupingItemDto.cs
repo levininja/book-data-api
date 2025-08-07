@@ -4,7 +4,6 @@ namespace BookDataApi.Dtos
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public string? DisplayName { get; set; }
         public List<int> SelectedBookshelfIds { get; set; } = new List<int>();
         public bool ShouldRemove { get; set; }
         public bool IsGenreBased { get; set; }

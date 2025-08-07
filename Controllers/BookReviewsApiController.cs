@@ -41,19 +41,19 @@ namespace book_data_api.Controllers
                         
                     allBookshelves = await _context.Bookshelves
                         .Where(bs => bs.Display == true && !bookshelvesInGroupings.Contains(bs.Id))
-                        .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                        .OrderBy(bs => bs.Name)
                         .ToListAsync();
                         
                     allBookshelfGroupings = await _context.BookshelfGroupings
                         .Include(bg => bg.Bookshelves)
-                        .OrderBy(bg => bg.DisplayName ?? bg.Name)
+                        .OrderBy(bg => bg.Name)
                         .ToListAsync();
                 }
                 else
                 {
                     // Show all bookshelves as before
                     allBookshelves = await _context.Bookshelves
-                        .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                        .OrderBy(bs => bs.Name)
                         .ToListAsync();
                 }
                 

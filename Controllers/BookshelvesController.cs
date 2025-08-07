@@ -1,5 +1,6 @@
 using book_data_api.Data;
 using book_data_api.Models;
+using BookDataApi.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -25,10 +26,39 @@ namespace book_data_api.Controllers
             try
             {
                 var bookshelves = await _context.Bookshelves
-                    .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                    .OrderBy(bs => bs.Name)
                     .ToListAsync();
                 
-                return Ok(bookshelves);
+                var groupings = await _context.BookshelfGroupings
+                    .Include(bg => bg.Bookshelves)
+                    .OrderBy(bg => bg.Name)
+                    .ToListAsync();
+                
+                var bookshelfDtos = bookshelves.Select(bs => new BookshelfDisplayItemDto
+                {
+                    Id = bs.Id,
+                    Name = bs.Name,
+                    Display = bs.Display ?? true,
+                    IsGenreBased = bs.IsGenreBased
+                }).ToList();
+                
+                var groupingDtos = groupings.Select(bg => new BookshelfGroupingItemDto
+                {
+                    Id = bg.Id,
+                    Name = bg.Name,
+                    SelectedBookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
+                    ShouldRemove = false,
+                    IsGenreBased = bg.IsGenreBased
+                }).ToList();
+                
+                var configuration = new BookshelfConfigurationDto
+                {
+                    EnableCustomMappings = true, // You may want to make this configurable
+                    Bookshelves = bookshelfDtos,
+                    Groupings = groupingDtos
+                };
+                
+                return Ok(configuration);
             }
             catch (Exception ex)
             {

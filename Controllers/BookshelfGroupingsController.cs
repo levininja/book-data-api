@@ -28,12 +28,12 @@ namespace book_data_api.Controllers
         public async Task<ActionResult<BookshelfConfigurationDto>> GetBookshelfConfiguration()
         {
             List<Bookshelf> bookshelves = await _context.Bookshelves
-                .OrderBy(bs => bs.DisplayName ?? bs.Name)
+                .OrderBy(bs => bs.Name)
                 .ToListAsync();
                 
             List<BookshelfGrouping> groupings = await _context.BookshelfGroupings
                 .Include(bg => bg.Bookshelves)
-                .OrderBy(bg => bg.DisplayName ?? bg.Name)
+                .OrderBy(bg => bg.Name)
                 .ToListAsync();
                 
             BookshelfConfigurationDto configurationDto = new BookshelfConfigurationDto
@@ -43,7 +43,6 @@ namespace book_data_api.Controllers
                 {
                     Id = bs.Id,
                     Name = bs.Name,
-                    DisplayName = bs.DisplayName,
                     Display = bs.Display ?? false,
                     IsGenreBased = bs.IsGenreBased
                 }).ToList(),
@@ -51,7 +50,6 @@ namespace book_data_api.Controllers
                 {
                     Id = bg.Id,
                     Name = bg.Name,
-                    DisplayName = bg.DisplayName,
                     SelectedBookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
                     IsGenreBased = bg.IsGenreBased
                 }).ToList()
@@ -110,7 +108,6 @@ namespace book_data_api.Controllers
                     {
                         grouping = existingGroupings.First(eg => eg.Id == groupingModel.Id);
                         grouping.Name = groupingModel.Name;
-                        grouping.DisplayName = groupingModel.DisplayName;
                         grouping.IsGenreBased = groupingModel.IsGenreBased;
                         grouping.Bookshelves.Clear();
                     }
@@ -119,7 +116,6 @@ namespace book_data_api.Controllers
                         grouping = new BookshelfGrouping
                         {
                             Name = groupingModel.Name,
-                            DisplayName = groupingModel.DisplayName,
                             IsGenreBased = groupingModel.IsGenreBased
                         };
                         _context.BookshelfGroupings.Add(grouping);
