@@ -33,6 +33,7 @@ namespace book_data_api.Controllers
             try
             {                
                 // Get all book reviews that have review content, including their associated books
+                // Exclude non-fiction books; these don't have tones assigned to them
                 List<BookReview> allBookReviews = await _context.BookReviews
                     .Include(br => br.Book)
                         .ThenInclude(b => b.Tones)
@@ -40,6 +41,7 @@ namespace book_data_api.Controllers
                         .ThenInclude(b => b.Bookshelves)
                             .ThenInclude(bs => bs.BookshelfGroupings)
                     .Where(br => br.HasReviewContent)
+                    .Where(br => !br.Book.Bookshelves.Any(bs => bs.IsGenreBased && bs.IsNonFictionGenre))
                     .OrderBy(br => br.Book.Title)
                     .ToListAsync();
 

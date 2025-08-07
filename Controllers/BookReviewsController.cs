@@ -459,7 +459,8 @@ namespace book_data_api.Controllers
                     bookshelf = new Bookshelf
                     {
                         Name = displayShelfName,
-                        Display = true
+                        Display = true,
+                        IsGenreBased = true
                     };
                     _context.Bookshelves.Add(bookshelf);
                     existingBookshelves.Add(bookshelf);
