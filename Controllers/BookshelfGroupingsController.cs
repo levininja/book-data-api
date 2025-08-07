@@ -24,7 +24,7 @@ namespace book_data_api.Controllers
         /// Retrieves the bookshelf configuration data from the database and returns it as a BookshelfConfigurationDto object.
         /// </summary>
         /// <returns>BookshelfConfigurationDto object containing bookshelves and groupings configuration</returns>
-        [HttpGet("configuration")]
+        [HttpGet]
         public async Task<ActionResult<BookshelfConfigurationDto>> GetBookshelfConfiguration()
         {
             List<Bookshelf> bookshelves = await _context.Bookshelves
@@ -38,19 +38,19 @@ namespace book_data_api.Controllers
                 
             BookshelfConfigurationDto configurationDto = new BookshelfConfigurationDto
             {
-                EnableCustomMappings = bookshelves.Any(bs => bs.Display.HasValue),
+                EnableCustomMappings = true,
                 Bookshelves = bookshelves.Select(bs => new BookshelfDisplayItemDto
                 {
                     Id = bs.Id,
                     Name = bs.Name,
-                    Display = bs.Display ?? false,
+                    Display = bs.Display,
                     IsGenreBased = bs.IsGenreBased
                 }).ToList(),
                 Groupings = groupings.Select(bg => new BookshelfGroupingItemDto
                 {
                     Id = bg.Id,
                     Name = bg.Name,
-                    SelectedBookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
+                    BookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
                     IsGenreBased = bg.IsGenreBased
                 }).ToList()
             };
@@ -63,7 +63,7 @@ namespace book_data_api.Controllers
         /// </summary>
         /// <param name="model">The BookshelfConfigurationDto containing updated bookshelf configuration data.</param>
         /// <returns>Boolean indicating success or failure of the operation</returns>
-        [HttpPost("configuration")]
+        [HttpPost]
         public async Task<ActionResult<bool>> UpdateBookshelfConfiguration([FromBody] BookshelfConfigurationDto model)
         {
             try
@@ -72,17 +72,12 @@ namespace book_data_api.Controllers
                 List<Bookshelf> bookshelves = await _context.Bookshelves.ToListAsync();
                 
                 if (model.EnableCustomMappings)
-                {
                     foreach (Bookshelf bookshelf in bookshelves)
                     {
                         BookshelfDisplayItemDto? displayItem = model.Bookshelves.FirstOrDefault(b => b.Id == bookshelf.Id);
                         bookshelf.Display = displayItem?.Display ?? false;
                         bookshelf.IsGenreBased = displayItem?.IsGenreBased ?? false;
                     }
-                }
-                else // Reset all display settings to null when custom mappings are disabled
-                    foreach (Bookshelf bookshelf in bookshelves)
-                        bookshelf.Display = null;
                 
                 // Handle groupings
                 List<BookshelfGrouping> existingGroupings = await _context.BookshelfGroupings
@@ -123,7 +118,7 @@ namespace book_data_api.Controllers
                     
                     // Add selected bookshelves to the grouping
                     List<Bookshelf> selectedBookshelves = bookshelves
-                        .Where(bs => groupingModel.SelectedBookshelfIds?.Contains(bs.Id) ?? false)
+                        .Where(bs => groupingModel.BookshelfIds?.Contains(bs.Id) ?? false)
                         .ToList();
                         
                     foreach (Bookshelf bookshelf in selectedBookshelves)

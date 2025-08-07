@@ -33,7 +33,7 @@ namespace book_data_api.Controllers
             try
             {
                 // Check if custom mappings are enabled
-                bool useCustomMappings = await _context.Bookshelves.AnyAsync(bs => bs.Display.HasValue);
+                bool useCustomMappings = true;
                 
                 // Get bookshelves and groupings based on custom mapping settings
                 List<Bookshelf> allBookshelves;
@@ -458,7 +458,8 @@ namespace book_data_api.Controllers
                 if(bookshelf == null){
                     bookshelf = new Bookshelf
                     {
-                        Name = displayShelfName
+                        Name = displayShelfName,
+                        Display = true
                     };
                     _context.Bookshelves.Add(bookshelf);
                     existingBookshelves.Add(bookshelf);

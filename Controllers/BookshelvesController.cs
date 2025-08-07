@@ -38,7 +38,7 @@ namespace book_data_api.Controllers
                 {
                     Id = bs.Id,
                     Name = bs.Name,
-                    Display = bs.Display ?? true,
+                    Display = bs.Display,
                     IsGenreBased = bs.IsGenreBased
                 }).ToList();
                 
@@ -46,7 +46,7 @@ namespace book_data_api.Controllers
                 {
                     Id = bg.Id,
                     Name = bg.Name,
-                    SelectedBookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
+                    BookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
                     ShouldRemove = false,
                     IsGenreBased = bg.IsGenreBased
                 }).ToList();

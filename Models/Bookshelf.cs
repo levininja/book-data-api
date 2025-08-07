@@ -4,7 +4,7 @@ namespace book_data_api.Models
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public bool? Display { get; set; }
+        public bool Display { get; set; } = true;
         public bool IsGenreBased { get; set; } = false;
         
         // Navigation property for many-to-many relationship with Book
