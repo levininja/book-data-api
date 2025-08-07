@@ -7,5 +7,6 @@ namespace BookDataApi.Dtos
         public List<int> BookshelfIds { get; set; } = new List<int>();
         public bool ShouldRemove { get; set; }
         public bool IsGenreBased { get; set; }
+        public bool IsNonFictionGenre { get; set; }
     }
 }

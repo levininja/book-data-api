@@ -44,14 +44,16 @@ namespace book_data_api.Controllers
                     Id = bs.Id,
                     Name = bs.Name,
                     Display = bs.Display,
-                    IsGenreBased = bs.IsGenreBased
+                    IsGenreBased = bs.IsGenreBased,
+                    IsNonFictionGenre = bs.IsNonFictionGenre
                 }).ToList(),
                 Groupings = groupings.Select(bg => new BookshelfGroupingItemDto
                 {
                     Id = bg.Id,
                     Name = bg.Name,
                     BookshelfIds = bg.Bookshelves.Select(bs => bs.Id).ToList(),
-                    IsGenreBased = bg.IsGenreBased
+                    IsGenreBased = bg.IsGenreBased,
+                    IsNonFictionGenre = bg.IsNonFictionGenre
                 }).ToList()
             };
             
@@ -77,6 +79,7 @@ namespace book_data_api.Controllers
                         BookshelfDisplayItemDto? displayItem = model.Bookshelves.FirstOrDefault(b => b.Id == bookshelf.Id);
                         bookshelf.Display = displayItem?.Display ?? false;
                         bookshelf.IsGenreBased = displayItem?.IsGenreBased ?? false;
+                        bookshelf.IsNonFictionGenre = displayItem?.IsNonFictionGenre ?? false;
                     }
                 
                 // Handle groupings
@@ -104,6 +107,7 @@ namespace book_data_api.Controllers
                         grouping = existingGroupings.First(eg => eg.Id == groupingModel.Id);
                         grouping.Name = groupingModel.Name;
                         grouping.IsGenreBased = groupingModel.IsGenreBased;
+                        grouping.IsNonFictionGenre = groupingModel.IsNonFictionGenre;
                         grouping.Bookshelves.Clear();
                     }
                     else
@@ -111,7 +115,8 @@ namespace book_data_api.Controllers
                         grouping = new BookshelfGrouping
                         {
                             Name = groupingModel.Name,
-                            IsGenreBased = groupingModel.IsGenreBased
+                            IsGenreBased = groupingModel.IsGenreBased,
+                            IsNonFictionGenre = groupingModel.IsNonFictionGenre
                         };
                         _context.BookshelfGroupings.Add(grouping);
                     }
@@ -125,8 +130,9 @@ namespace book_data_api.Controllers
                     {
                         grouping.Bookshelves.Add(bookshelf);
                         bookshelvesInGroupings.Add(bookshelf.Id);
-                        // Set IsGenreBased for bookshelves in groupings
+                        // Set IsGenreBased and IsNonFictionGenre for bookshelves in groupings
                         bookshelf.IsGenreBased = groupingModel.IsGenreBased;
+                        bookshelf.IsNonFictionGenre = groupingModel.IsNonFictionGenre;
                     }
                 }
                 
