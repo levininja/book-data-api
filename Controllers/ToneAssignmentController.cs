@@ -179,8 +179,8 @@ namespace book_data_api.Controllers
         private List<string> GetBookGenres(BookReview bookReview)
         {
             return bookReview.Book.Bookshelves
-                .SelectMany(bs => bs.BookshelfGroupings)
-                .Select(bg => bg.Name)
+                .Where(bs => bs.Display && bs.IsGenreBased)
+                .Select(bs => bs.Name)
                 .Distinct()
                 .OrderBy(name => name)
                 .ToList();
