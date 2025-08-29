@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using book_data_api.Data;
@@ -11,9 +12,11 @@ using book_data_api.Data;
 namespace book_data_api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250808034132_AddBookToneRecommendations")]
+    partial class AddBookToneRecommendations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -212,9 +215,6 @@ namespace book_data_api.Migrations
                     b.Property<int>("BookId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("Feedback")
                         .HasColumnType("integer");
 
@@ -222,13 +222,7 @@ namespace book_data_api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("ToneId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ToneId")
-                        .HasDatabaseName("IX_BookToneRecommendation_ToneId");
 
                     b.HasIndex("BookId", "Tone")
                         .HasDatabaseName("IX_BookToneRecommendation_BookId_Tone");

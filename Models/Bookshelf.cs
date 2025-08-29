@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace book_data_api.Models
 {
     public class Bookshelf
@@ -9,9 +11,11 @@ namespace book_data_api.Models
         public bool IsNonFictionGenre { get; set; } = false;
         
         // Navigation property for many-to-many relationship with Book
-        public ICollection<Book> Books { get; set; } = new List<Book>();
+        [JsonIgnore]
+        public ICollection<Models.Book> Books { get; set; } = new List<Models.Book>();
         
         // Navigation property for many-to-many relationship with BookshelfGrouping
+        [JsonIgnore]
         public ICollection<BookshelfGrouping> BookshelfGroupings { get; set; } = new List<BookshelfGrouping>();
     }
 } 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using book_data_api.Models;
+using BookDataApi.Shared.Models;
 
 namespace book_data_api.Data
 {
@@ -11,11 +12,12 @@ namespace book_data_api.Data
         }
 
         public DbSet<BookCoverImage> BookCoverImages { get; set; } = null!;
-        public DbSet<Book> Books { get; set; } = null!;
+        public DbSet<Models.Book> Books { get; set; } = null!;
         public DbSet<BookReview> BookReviews { get; set; } = null!;
+        public DbSet<Models.BookToneRecommendation> BookToneRecommendations { get; set; } = null!;
         public DbSet<Bookshelf> Bookshelves { get; set; } = null!;
         public DbSet<BookshelfGrouping> BookshelfGroupings { get; set; } = null!;
-        public DbSet<Tone> Tones { get; set; } = null!;
+        public DbSet<Models.Tone> Tones { get; set; } = null!;
         public DbSet<ErrorLog> ErrorLogs { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,7 +26,7 @@ namespace book_data_api.Data
                 .HasIndex(b => b.Name)
                 .IsUnique();
                 
-            modelBuilder.Entity<Book>(entity =>
+            modelBuilder.Entity<Models.Book>(entity =>
             {
                 entity.ToTable(t =>
                 {
@@ -67,15 +69,40 @@ namespace book_data_api.Data
                     .IsRequired()
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            
+            modelBuilder.Entity<Models.BookToneRecommendation>(entity =>
+            {
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_BookToneRecommendation_Feedback", "\"Feedback\" BETWEEN -2 AND 1");
+                });
+                
+                // Configure one-to-many relationship with Book
+                entity.HasOne(btr => btr.Book)
+                    .WithMany(b => b.BookToneRecommendations)
+                    .HasForeignKey(btr => btr.BookId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Cascade);
+                    
+
+                    
+                // Add index for efficient queries by book and tone
+                entity.HasIndex(btr => new { btr.BookId, btr.Tone })
+                    .HasDatabaseName("IX_BookToneRecommendation_BookId_Tone");
+                    
+                // Add index for tone ID queries
+                entity.HasIndex(btr => btr.ToneId)
+                    .HasDatabaseName("IX_BookToneRecommendation_ToneId");
+            });
                 
             // Configure many-to-many relationship between Book and Bookshelf
-            modelBuilder.Entity<Book>()
+            modelBuilder.Entity<Models.Book>()
                 .HasMany(b => b.Bookshelves)
                 .WithMany(bs => bs.Books)
                 .UsingEntity(j => j.ToTable("BookBookshelves"));
                 
             // Configure many-to-many relationship between Book and Tone
-            modelBuilder.Entity<Book>()
+            modelBuilder.Entity<Models.Book>()
                 .HasMany(b => b.Tones)
                 .WithMany(t => t.Books)
                 .UsingEntity(j => j.ToTable("BookTones"));
@@ -95,7 +122,7 @@ namespace book_data_api.Data
                 .IsUnique();
                 
             // Configure self-referencing relationship for Tone
-            modelBuilder.Entity<Tone>(entity =>
+            modelBuilder.Entity<Models.Tone>(entity =>
             {
                 entity.HasOne(t => t.Parent)
                     .WithMany(t => t.Subtones)

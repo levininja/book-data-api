@@ -1,4 +1,4 @@
-namespace BookDataApi.Dtos
+namespace BookDataApi.Shared.Dtos
 {
     public class ToneDisplayItemDto
     {

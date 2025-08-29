@@ -1,6 +1,7 @@
 using book_data_api.Data;
 using book_data_api.Models;
-using BookDataApi.Dtos;
+using BookDataApi.Shared.Dtos;
+using BookDataApi.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -66,6 +67,8 @@ namespace book_data_api.Controllers
                 return StatusCode(500, "An error occurred while fetching bookshelves");
             }
         }
+        
+
         
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBookshelf(int id)

@@ -1,16 +1,27 @@
 # Book Data API
 
-A standalone ASP.NET Core Web API for serving book data and related information. This API provides endpoints for managing books, book reviews, bookshelves, book tones, and book cover images.
+A standalone ASP.NET Core Web API for serving book data and related information. This API provides endpoints for managing books, book reviews, bookshelves, book tones, book tone recommendations, and book cover images.
 
 ## Features
 
 - **Book Management**: CRUD operations for books with metadata
 - **Book Reviews**: Store and retrieve book reviews with ratings
-- **Bookshelves**: Organize books into custom bookshelves
+- **Book Tone Recommendations**: AI-powered tone suggestions with feedback system
+- **Bookshelves**: Organize books into custom bookshelves with grouping support
 - **Book Cover Images**: Automatic book cover image fetching and storage
 - **Search**: Full-text search capabilities for books and reviews
-- **Tones**: Categorize books by tone/mood
+- **Tones**: Categorize books by tone/mood with hierarchical structure
+- **Tone Assignment**: Assign tones to books and book reviews
 - **Swagger Documentation**: Interactive API documentation
+
+## Architecture
+
+This project uses a **shared library architecture** with `BookDataApi.Shared` containing:
+- **Core Models**: `Book`, `BookToneRecommendation`, `Tone`
+- **All DTOs**: Data transfer objects for API contracts
+- **Shared Contracts**: Reusable across multiple projects
+
+The main API project extends these shared models with Entity Framework navigation properties.
 
 ## Prerequisites
 
@@ -76,11 +87,18 @@ The API will be available at:
 ## API Endpoints
 
 ### Books
-- `GET /api/books` - Get all books
+- `GET /api/books` - Get all books (with pagination and search)
 - `GET /api/books/{id}` - Get book by ID
 - `POST /api/books` - Create new book
 - `PUT /api/books/{id}` - Update book
 - `DELETE /api/books/{id}` - Delete book
+
+### Book Tone Recommendations
+- `GET /api/booktonerecommendations` - Get all recommendations (with optional tone filtering)
+- `GET /api/booktonerecommendations/{id}` - Get recommendation by ID
+- `GET /api/booktonerecommendations/book/{bookId}` - Get recommendations for a specific book
+- `POST /api/booktonerecommendations` - Create new recommendation
+- `PUT /api/booktonerecommendations/{id}` - Update recommendation feedback and tone
 
 ### Book Reviews
 - `GET /api/bookreviews` - Get all book reviews
@@ -90,11 +108,17 @@ The API will be available at:
 - `DELETE /api/bookreviews/{id}` - Delete book review
 
 ### Bookshelves
-- `GET /api/bookshelves` - Get all bookshelves
+- `GET /api/bookshelves` - Get all bookshelves with configuration
 - `GET /api/bookshelves/{id}` - Get bookshelf by ID
 - `POST /api/bookshelves` - Create new bookshelf
 - `PUT /api/bookshelves/{id}` - Update bookshelf
 - `DELETE /api/bookshelves/{id}` - Delete bookshelf
+
+### Bookshelf Groupings
+- `GET /api/bookshelfgroupings` - Get all bookshelf groupings
+- `POST /api/bookshelfgroupings` - Create new grouping
+- `PUT /api/bookshelfgroupings/{id}` - Update grouping
+- `DELETE /api/bookshelfgroupings/{id}` - Delete grouping
 
 ### Book Covers
 - `GET /api/bookcovers/{searchTerm}` - Get book cover image
@@ -107,6 +131,10 @@ The API will be available at:
 - `PUT /api/tones/{id}` - Update tone
 - `DELETE /api/tones/{id}` - Delete tone
 
+### Tone Assignment
+- `GET /api/toneassignment` - Get tone assignment data for books and reviews
+- `POST /api/toneassignment/assignment` - Update tone assignments
+
 ## Development
 
 ### Project Structure
@@ -115,20 +143,44 @@ The API will be available at:
 book-data-api/
 ├── Controllers/          # API controllers
 ├── Data/                # Database context and configuration
-├── Models/              # Entity models
+├── Models/              # Entity models (extend shared models)
 ├── Services/            # Business logic services
 ├── Migrations/          # Database migrations
-└── Program.cs           # Application entry point
+├── Program.cs           # Application entry point
+└── BookDataApi.Shared/  # Shared library (separate project)
+    ├── Models/          # Core models without EF navigation
+    └── Dtos/            # All DTOs for API contracts
 ```
+
+### Shared Library DTOs
+
+The following DTOs are available in `BookDataApi.Shared`:
+
+**Book-related:**
+- `BookDto`, `CreateBookDto`, `UpdateBookDto`
+- `BookToneRecommendationDto`, `CreateBookToneRecommendationDto`, `UpdateBookToneRecommendationDto`
+
+**Bookshelf-related:**
+- `BookshelfDto`, `BookshelfConfigurationDto`
+- `BookshelfDisplayItemDto`, `BookshelfGroupingItemDto`
+
+**Tone-related:**
+- `ToneDto`, `ToneItemDto`, `ToneAssignmentDto`
+- `BookReviewToneItemDto`, `GenreToneAssociationDto`
+
+**Other:**
+- `BookCoverImageDto`, `ErrorViewModel`
 
 ### Adding New Features
 
-1. Create model classes in the `Models/` directory
-2. Add DbSet to `ApplicationDbContext`
-3. Create a new migration: `dotnet ef migrations add MigrationName`
-4. Apply the migration: `dotnet ef database update`
-5. Create controller in `Controllers/` directory
-6. Add any necessary services in `Services/` directory
+1. **For shared functionality**: Add to `BookDataApi.Shared` project
+2. **For EF-specific features**: Add to main project's `Models/` directory
+3. Create model classes in the appropriate location
+4. Add DbSet to `ApplicationDbContext`
+5. Create a new migration: `dotnet ef migrations add MigrationName`
+6. Apply the migration: `dotnet ef database update`
+7. Create controller in `Controllers/` directory
+8. Add any necessary services in `Services/` directory
 
 ## Configuration
 
@@ -152,6 +204,7 @@ The API is configured to allow all origins in development. For production, updat
 1. **Database Connection**: Ensure PostgreSQL is running and the connection string is correct
 2. **Port Already in Use**: The application runs on port 5020 by default. Change it in `appsettings.Development.json` if needed
 3. **Migration Errors**: If you encounter migration issues, you can remove the `Migrations/` folder and create a new initial migration
+4. **Shared Library Build Issues**: Ensure `BookDataApi.Shared` builds before the main project
 
 ### Logs
 

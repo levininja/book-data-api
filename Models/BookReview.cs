@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace book_data_api.Models
 {
@@ -13,7 +14,8 @@ namespace book_data_api.Models
         
         // Foreign key to Book
         public int BookId { get; set; }
-        public Book Book { get; set; } = null!; // Navigation property to Book
+        [JsonIgnore]
+        public Models.Book Book { get; set; } = null!; // Navigation property to Book
         
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public bool HasReviewContent { get; set; }

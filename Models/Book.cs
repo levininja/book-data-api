@@ -1,34 +1,32 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BookDataApi.Shared.Models;
+using System.Text.Json.Serialization;
 
 namespace book_data_api.Models
 {
-    public class Book
+    public class Book : BookDataApi.Shared.Models.Book
     {
-        public int Id { get; set; }
-        public required string Title { get; set; }
-        public required string AuthorFirstName { get; set; }
-        public required string AuthorLastName { get; set; }
-        public string? ISBN10 { get; set; }
-        public string? ISBN13 { get; set; }
-        public required decimal AverageRating { get; set; } // 1-5
-        public int? NumberOfPages { get; set; }
-        public int? OriginalPublicationYear { get; set; }
-        public string? SearchableString { get; set; }
-        
         // Navigation property for one-to-many relationship with BookReview
+        [JsonIgnore]
         public ICollection<BookReview> BookReviews { get; set; } = new List<BookReview>();
         
         // Navigation property for many-to-many relationship with Bookshelf
+        [JsonIgnore]
         public ICollection<Bookshelf> Bookshelves { get; set; } = new List<Bookshelf>();
         
         // Navigation property for many-to-many relationship with Tone
+        [JsonIgnore]
         public ICollection<Tone> Tones { get; set; } = new List<Tone>();
+        
+        // Navigation property for one-to-many relationship with BookToneRecommendation
+        [JsonIgnore]
+        public ICollection<BookToneRecommendation> BookToneRecommendations { get; set; } = new List<BookToneRecommendation>();
                 
+        [JsonIgnore]
         public BookCoverImage? CoverImage { get; set; }  // Navigation property for the associated image
-        public int? CoverImageId { get; set; }  // Foreign key (nullable to allow books without images)
 
         [NotMapped]
-        public string TitleByAuthor => $"{Title} by {AuthorFirstName} {AuthorLastName}".Trim();
+        public new string TitleByAuthor => $"{Title} by {AuthorFirstName} {AuthorLastName}".Trim();
     }
 } 

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using book_data_api.Data;
 using book_data_api.Models;
-using BookDataApi.Dtos;
+using BookDataApi.Shared.Dtos;
 
 namespace book_data_api.Controllers
 {

@@ -1,12 +1,9 @@
+using BookDataApi.Shared.Models;
+
 namespace book_data_api.Models
 {
-    public class Tone : ITone
+    public class Tone : BookDataApi.Shared.Models.Tone
     {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public string? Description { get; set; }
-        public int? ParentId { get; set; }
-        
         // Navigation property for self-referencing relationship (parent tone)
         public Tone? Parent { get; set; }
         

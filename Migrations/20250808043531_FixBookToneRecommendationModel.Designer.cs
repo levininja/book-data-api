@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using book_data_api.Data;
@@ -11,9 +12,11 @@ using book_data_api.Data;
 namespace book_data_api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250808043531_FixBookToneRecommendationModel")]
+    partial class FixBookToneRecommendationModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,7 +431,14 @@ namespace book_data_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("book_data_api.Models.Tone", "ToneNavigation")
+                        .WithMany()
+                        .HasForeignKey("ToneId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Book");
+
+                    b.Navigation("ToneNavigation");
                 });
 
             modelBuilder.Entity("book_data_api.Models.Tone", b =>

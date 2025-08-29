@@ -1,6 +1,8 @@
 using book_data_api.Data;
 using book_data_api.Models;
 using book_data_api.Services;
+using BookDataApi.Shared.Models;
+using BookDataApi.Shared.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -32,8 +34,12 @@ namespace book_data_api.Controllers
         {
             try
             {
+                _logger.LogInformation("GetBookReviews called with parameters: displayCategory={DisplayCategory}, shelf={Shelf}, grouping={Grouping}, recent={Recent}", 
+                    displayCategory, shelf, grouping, recent);
+                
                 // Check if custom mappings are enabled
                 bool useCustomMappings = true;
+                _logger.LogInformation("Custom mappings enabled: {UseCustomMappings}", useCustomMappings);
                 
                 // Get bookshelves and groupings based on custom mapping settings
                 List<Bookshelf> allBookshelves;
@@ -46,15 +52,24 @@ namespace book_data_api.Controllers
                         .SelectMany(bg => bg.Bookshelves.Select(bs => bs.Id))
                         .ToListAsync();
                         
+                    _logger.LogInformation("Bookshelves in groupings: {Count} - IDs: {Ids}", 
+                        bookshelvesInGroupings.Count, string.Join(", ", bookshelvesInGroupings));
+                        
                     allBookshelves = await _context.Bookshelves
                         .Where(bs => bs.Display == true && !bookshelvesInGroupings.Contains(bs.Id))
                         .OrderBy(bs => bs.Name)
                         .ToListAsync();
                         
+                    _logger.LogInformation("Individual bookshelves found: {Count} - Names: {Names}", 
+                        allBookshelves.Count, string.Join(", ", allBookshelves.Select(bs => bs.Name)));
+                        
                     allBookshelfGroupings = await _context.BookshelfGroupings
                         .Include(bg => bg.Bookshelves)
                         .OrderBy(bg => bg.Name)
                         .ToListAsync();
+                        
+                    _logger.LogInformation("Bookshelf groupings found: {Count} - Names: {Names}", 
+                        allBookshelfGroupings.Count, string.Join(", ", allBookshelfGroupings.Select(bg => bg.Name)));
                 }
                 else
                 {
@@ -62,11 +77,17 @@ namespace book_data_api.Controllers
                     allBookshelves = await _context.Bookshelves
                         .OrderBy(bs => bs.Name)
                         .ToListAsync();
+                        
+                    _logger.LogInformation("All bookshelves found: {Count} - Names: {Names}", 
+                        allBookshelves.Count, string.Join(", ", allBookshelves.Select(bs => bs.Name)));
                 }
                 
                 // Default to "favorites" shelf if no shelf/grouping is specified and not showing recent
                 if (string.IsNullOrEmpty(shelf) && string.IsNullOrEmpty(grouping) && !recent)
-                    shelf = "favorites";
+                {
+                    shelf = "Favorites";
+                    _logger.LogInformation("Defaulting to favorites shelf: {Shelf}", shelf);
+                }
                 
                 // Build the query for book reviews - only include reviews with content
                 var bookReviewsQuery = _context.BookReviews
@@ -77,37 +98,55 @@ namespace book_data_api.Controllers
                     .Where(br => br.HasReviewContent == true)
                     .AsQueryable();
                 
+                _logger.LogInformation("Initial book reviews query built. Total reviews in DB: {TotalReviews}", 
+                    await _context.BookReviews.CountAsync());
+                _logger.LogInformation("Reviews with content: {ReviewsWithContent}", 
+                    await _context.BookReviews.Where(br => br.HasReviewContent == true).CountAsync());
+                
                 // Apply filters
                 if (recent)
                 {
+                    _logger.LogInformation("Applying recent filter - taking top 10");
                     bookReviewsQuery = bookReviewsQuery
                         .OrderByDescending(r => r.DateRead)
                         .Take(10);
                 }
                 else if (!string.IsNullOrEmpty(grouping))
                 {
+                    _logger.LogInformation("Applying grouping filter: {Grouping}", grouping);
                     // Filter by grouping - get all bookshelves in the grouping
                     var groupingBookshelfNames = await _context.BookshelfGroupings
                         .Where(bg => bg.Name.ToLower() == grouping.ToLower())
                         .SelectMany(bg => bg.Bookshelves.Select(bs => bs.Name))
                         .ToListAsync();
                         
+                    _logger.LogInformation("Bookshelves in grouping '{Grouping}': {Count} - Names: {Names}", 
+                        grouping, groupingBookshelfNames.Count, string.Join(", ", groupingBookshelfNames));
+                        
                     bookReviewsQuery = bookReviewsQuery
                         .Where(br => br.Book.Bookshelves.Any(bs => groupingBookshelfNames.Contains(bs.Name)));
                 }
                 else if (!string.IsNullOrEmpty(shelf))
                 {
+                    _logger.LogInformation("Applying shelf filter: {Shelf}", shelf);
                     // Filter by specific shelf
                     bookReviewsQuery = bookReviewsQuery
                         .Where(br => br.Book.Bookshelves.Any(bs => bs.Name.ToLower() == shelf.ToLower()));
+                        
+                    _logger.LogInformation("Books with shelf '{Shelf}': {Count}", 
+                        shelf, await bookReviewsQuery.CountAsync());
                 }
                 
                 // Apply display category filter if specified
                 if (!string.IsNullOrEmpty(displayCategory))
                 {
+                    _logger.LogInformation("Applying display category filter: {DisplayCategory}", displayCategory);
                     bookReviewsQuery = bookReviewsQuery
                         .Where(br => br.Book.Bookshelves.Any(bs => 
                             bs.Name.ToLower() == displayCategory.ToLower()));
+                            
+                    _logger.LogInformation("Books with display category '{DisplayCategory}': {Count}", 
+                        displayCategory, await bookReviewsQuery.CountAsync());
                 }
                 
                 // Order by date read (most recent first)
@@ -115,12 +154,59 @@ namespace book_data_api.Controllers
                 
                 var bookReviews = await bookReviewsQuery.ToListAsync();
                 
-                return Ok(new
+                _logger.LogInformation("Final book reviews result: {Count} reviews", bookReviews.Count);
+                if (bookReviews.Any())
                 {
-                    bookReviews,
-                    bookshelves = allBookshelves,
-                    bookshelfGroupings = allBookshelfGroupings
-                });
+                    _logger.LogInformation("Sample review titles: {Titles}", 
+                        string.Join(", ", bookReviews.Take(3).Select(br => br.Book.Title)));
+                }
+                
+                // Map models to DTOs
+                var bookReviewDtos = bookReviews.Select(br => new BookDataApi.Shared.Dtos.BookReviewDto
+                {
+                    Id = br.Id,
+                    ReviewerRating = br.ReviewerRating,
+                    ReviewerFullName = br.ReviewerFullName,
+                    DateRead = br.DateRead,
+                    Review = br.Review,
+                    BookId = br.BookId,
+                    HasReviewContent = br.HasReviewContent,
+                    ReviewPreviewText = br.ReviewPreviewText,
+                    ReadingTimeMinutes = br.ReadingTimeMinutes
+                }).ToList();
+
+                var bookshelfDtos = allBookshelves.Select(bs => new BookDataApi.Shared.Dtos.BookshelfDto
+                {
+                    Id = bs.Id,
+                    Name = bs.Name,
+                    Display = bs.Display,
+                    IsGenreBased = bs.IsGenreBased,
+                    IsNonFictionGenre = bs.IsNonFictionGenre
+                }).ToList();
+
+                var bookshelfGroupingDtos = allBookshelfGroupings.Select(bg => new BookDataApi.Shared.Dtos.BookshelfGroupingDto
+                {
+                    Id = bg.Id,
+                    Name = bg.Name,
+                    IsGenreBased = bg.IsGenreBased,
+                    IsNonFictionGenre = bg.IsNonFictionGenre
+                }).ToList();
+
+                BookReviewResponseDto responseData = new BookReviewResponseDto
+                {
+                    BookReviews = bookReviewDtos,
+                    Bookshelves = bookshelfDtos,
+                    BookshelfGroupings = bookshelfGroupingDtos
+                };
+                
+                _logger.LogInformation("Returning response with: bookReviews={BookReviewsCount}, bookshelves={BookshelvesCount}, bookshelfGroupings={GroupingsCount}", 
+                    responseData.BookReviews.Count, responseData.Bookshelves.Count, responseData.BookshelfGroupings.Count);
+                
+                // Log the actual response structure
+                _logger.LogInformation("Response structure: {ResponseStructure}", 
+                    System.Text.Json.JsonSerializer.Serialize(responseData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                
+                return Ok(responseData);
             }
             catch (Exception ex)
             {
@@ -303,7 +389,7 @@ namespace book_data_api.Controllers
                     dateRead = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
                 
                 // Create Book object
-                Book book = new Book
+                book_data_api.Models.Book book = new book_data_api.Models.Book
                 {
                     Title = row.Title ?? "",
                     AuthorFirstName = firstName,
@@ -436,7 +522,7 @@ namespace book_data_api.Controllers
         /// <param name="bookshelvesString">The comma-separated string of bookshelf names from the CSV.</param>
         /// <param name="book">The book to associate the bookshelves with.</param>
         /// <param name="existingBookshelves">The list of existing bookshelves in the database.</param>
-        private void ProcessBookshelvesForImport(string? bookshelvesString, Book book, List<Bookshelf> existingBookshelves)
+        private void ProcessBookshelvesForImport(string? bookshelvesString, Models.Book book, List<Bookshelf> existingBookshelves)
         {
             if (string.IsNullOrEmpty(bookshelvesString))
                 return;
@@ -483,12 +569,63 @@ namespace book_data_api.Controllers
             // Apply specific replacements first (e.g., "sf" -> "Science Fiction")
             string displayName = goodreadsShelfName.Replace("sf", "Science Fiction");
             
-            // Convert kebab-case to Title Case (e.g., "modern-classics" -> "Modern Classics")
-            displayName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-                displayName.Replace('-', ' ').ToLower()
-            );
+            // Convert kebab-case to space-separated and apply smart capitalization
+            displayName = ApplySmartCapitalization(displayName.Replace('-', ' ').ToLower());
             
             return displayName;
+        }
+
+        /// <summary>
+        /// Applies smart capitalization to a string, respecting common word exclusions.
+        /// The first word is always capitalized, but certain common words are kept lowercase unless they're the first word.
+        /// </summary>
+        /// <param name="input">The input string to capitalize</param>
+        /// <returns>The smartly capitalized string</returns>
+        private string ApplySmartCapitalization(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // Words that should not be capitalized (unless they're the first word)
+            HashSet<string> excludedWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "a", "an", "the", "and", "but", "or", "for", "nor", "as", "at", "by", "from", "in", "into", "of", "on", "onto", "per", "to", "up", "via", "with"
+            };
+
+            string[] words = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (i == 0)
+                {
+                    // Always capitalize the first word
+                    words[i] = CapitalizeFirstLetter(words[i]);
+                }
+                else if (!excludedWords.Contains(words[i].ToLower()))
+                {
+                    // Capitalize words that are not in the exclusion list
+                    words[i] = CapitalizeFirstLetter(words[i]);
+                }
+                // Words in the exclusion list (that aren't the first word) remain lowercase
+            }
+
+            return string.Join(" ", words);
+        }
+
+        /// <summary>
+        /// Capitalizes the first letter of a word while preserving the rest of the word.
+        /// </summary>
+        /// <param name="word">The word to capitalize</param>
+        /// <returns>The word with the first letter capitalized</returns>
+        private string CapitalizeFirstLetter(string word)
+        {
+            if (string.IsNullOrEmpty(word))
+                return word;
+
+            if (word.Length == 1)
+                return word.ToUpper();
+
+            return char.ToUpper(word[0]) + word.Substring(1).ToLower();
         }
 
         /// <summary>
